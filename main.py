@@ -2,21 +2,32 @@ from fastapi import FastAPI, HTTPException
 from pydantic import BaseModel
 from typing import List
 import psycopg2
+from contextlib import asynccontextmanager
+
+from database import create_tables, delete_tables
+
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    await delete_tables()
+    print("Database Clear")
+    await create_tables()
+    print("Database Ready")
+    yield
+    print("Off")
 
 app = FastAPI()
 
-# Модель задачи
-class Task(BaseModel):
+class STaskAdd(BaseModel):
     name: str
-    parent_id: int = None
-    executor: str
-    deadline: str
-    status: str
+    description: [str | None]
 
-# Модель сотрудника
-class Employee(BaseModel):
-    name: str
-    position: str
+
+class STask(STaskAdd):
+    id: int
+
+
+
 
 # Функция для получения соединения с БД
 def get_db_connection():
@@ -24,7 +35,7 @@ def get_db_connection():
         host="localhost",
         database="tasks_db",
         user="postgres",
-        password="milkut56466"
+        password=""
     )
     return conn
 
